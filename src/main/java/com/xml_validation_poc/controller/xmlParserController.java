@@ -23,6 +23,11 @@ public class xmlParserController {
         return ResponseEntity.status(HttpStatus.OK).body(xmlParserService.parseXmls(requestFilePaths));
     }
 
+    @PostMapping("/parse/applications")
+    public ResponseEntity<List<XmlMapping>> parseXmlForApplicationsLu(@RequestBody RequestFilePaths requestFilePaths){
+        return ResponseEntity.status(HttpStatus.OK).body(xmlParserService.setValuesToApplicationsLu(requestFilePaths));
+    }
+
     @GetMapping("/getAllRecords")
     public ResponseEntity<List<XmlMapping>> getData(){
         return ResponseEntity.status(HttpStatus.OK).body(xmlParserService.getAll());

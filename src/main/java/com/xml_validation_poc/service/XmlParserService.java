@@ -1,8 +1,10 @@
 package com.xml_validation_poc.service;
 
 import com.xml_validation_poc.dao.XmlMappingDao;
+import com.xml_validation_poc.dto.RawNCxmlNodes;
 import com.xml_validation_poc.dto.RawNcxmlXpaths;
 import com.xml_validation_poc.dto.RequestFilePaths;
+import com.xml_validation_poc.dto.XmlNode;
 import com.xml_validation_poc.entity.XmlMapping;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,15 +28,54 @@ public class XmlParserService {
     }
 
     public RawNcxmlXpaths parseXmls(RequestFilePaths requestFilePaths){
-
-    List<String> rawXpathList = new TreeSet<>(xmlParser(requestFilePaths.getRawFilePath(),null)).stream().toList();
-    List<String> cxmlPathList = new TreeSet<>(xmlParser(requestFilePaths.getCxmlFilePath(),null)).stream().toList();
+//    List<String> rawXpathList = new TreeSet<>(xmlParser(requestFilePaths.getRawFilePath())).stream().toList();
+    List<String> rawXpathList = xmlParser(requestFilePaths.getRawFilePath());
+//    List<String> cxmlPathList = new TreeSet<>(xmlParser(requestFilePaths.getCxmlFilePath())).stream().toList();
+    List<String> cxmlPathList = xmlParser(requestFilePaths.getCxmlFilePath());
         return new RawNcxmlXpaths(rawXpathList,cxmlPathList);
     }
 
-//    public Object validateApplicationsLu(){
-//
-//    }
+    public RawNCxmlNodes parseXmlsForApplicationsLu(RequestFilePaths requestFilePaths){
+        List<XmlNode> rawXmlNodeList = rawXmlParserForApplicationsLu(requestFilePaths.getRawFilePath());
+        List<XmlNode> cxmlNodeList = cxmlParserForApplicationsLu(requestFilePaths.getCxmlFilePath());
+        return new RawNCxmlNodes(rawXmlNodeList,cxmlNodeList);
+    }
+
+    public List<XmlMapping> getApplicationsLuXmlMappings(){
+        return getAll().stream()
+                .filter(xmlMapping -> "applications".equals(xmlMapping.getLogicalUnit())).toList();
+    }
+
+    public List<XmlMapping> setValuesToApplicationsLu(RequestFilePaths requestFilePaths){
+//        Applications Lu mappings from  db
+        List<XmlMapping> xmlMappings = getApplicationsLuXmlMappings();
+        xmlMappings.forEach(xmlMapping -> System.out.println(xmlMapping.getRawTag()));
+        System.out.println();
+        xmlMappings.forEach(xmlMapping -> System.out.println(xmlMapping.getCxmlTag()));
+//       applications Lu from raw and cxml files
+        RawNCxmlNodes rawNCxmlNodes = parseXmlsForApplicationsLu(requestFilePaths);
+        System.out.println("---------------------------------------------------------------------------------");
+        List<XmlNode> raw = rawNCxmlNodes.getRawXmlNodeList();
+//        System.out.println(raw);
+        List<XmlNode> cxml = rawNCxmlNodes.getCxmlNodeList();
+//        System.out.println(cxml);
+        return xmlMappings.stream().peek(xmlMapping -> {
+            for (XmlNode xmlNode : raw) {
+                System.out.println(xmlMapping.getRawTag()+"\n"+xmlNode.getXpath());
+                System.out.println();
+                if (xmlMapping.getRawTag().equals(xmlNode.getXpath())) {
+                    System.out.println(xmlNode.getNodeValue());
+                    xmlMapping.setRawTagValue(xmlNode.getNodeValue()+" , "+xmlMapping.getRawTagValue());
+                }
+            }
+            for (XmlNode xmlNode : cxml) {
+                if (xmlMapping.getCxmlTag().equals(xmlNode.getXpath())) {
+                    System.out.println(xmlNode.getNodeValue());
+                    xmlMapping.setCxmlTagValue(xmlNode.getNodeValue()+" , "+xmlMapping.getRawTagValue());
+                }
+            }
+        }).toList();
+    }
     public static class Xpath {
         public Xpath(String xPath, Node element) {
             this.xPath = xPath;
@@ -60,7 +101,7 @@ public class XmlParserService {
                 attributesString = attributesString.concat("@").concat(s);
             }
             xPath = element.getNodeName()
-                    .concat(attributesString)
+//                    .concat(attributesString)
                     .concat("/").concat(xPath);
             return getParentsRecursively(element.getParentNode(), xPath);
         }
@@ -73,11 +114,11 @@ public class XmlParserService {
         }
         return stringStringMap;
     }
-    
-    public List<String> xmlParser(String filePath,String Lu){
-        List<String> xmlPathList = new ArrayList<>();
+
+    public Document getNodeFromXml(String xmlFilePath){
+        Document document = null;
         try{
-            File inputFile = new File(filePath);
+            File inputFile = new File(xmlFilePath);
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false);
             factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
@@ -87,10 +128,19 @@ public class XmlParserService {
             factory.setXIncludeAware(false);
             factory.setExpandEntityReferences(false);
             DocumentBuilder documentBuilder = factory.newDocumentBuilder();
-            Document document1 = documentBuilder.parse(inputFile);
-            document1.getDocumentElement().normalize();
+            document = documentBuilder.parse(inputFile);
+            document.getDocumentElement().normalize();
 
-            NodeList nodeList = document1.getElementsByTagName("*");
+        }catch (Exception exception){
+            exception.fillInStackTrace();
+        }
+        return document;
+    }
+
+    public List<String> xmlParser(String filePath){
+        List<String> xmlPathList = new ArrayList<>();
+        try{
+            NodeList nodeList = getNodeFromXml(filePath).getElementsByTagName("*");
             for (int i=0; i<nodeList.getLength(); i++) {
                 // Get element
                 Node element = nodeList.item(i);
@@ -98,14 +148,72 @@ public class XmlParserService {
                 System.out.println("Xpath : "+getParentsRecursively(element, null).getxPath());
                 xmlPathList.add(getParentsRecursively(element, null).getxPath());
                 System.out.println("Attributes : "+getAttributesAsMap(element.getAttributes()));
-//            System.out.println("ParentElement : "+element.getParentNode().getNodeName());
-//        System.out.println("Data : "+element.getTextContent());
                 System.out.println();
-
             }
         }catch (Exception exception){
             exception.fillInStackTrace();
         }
         return xmlPathList;
+    }
+    public List<XmlNode> cxmlParserForApplicationsLu(String filePath){
+        List<XmlNode> xmlNodeList = new ArrayList<>();
+        try{
+            NodeList nodeList = getNodeFromXml(filePath).getElementsByTagName("*");
+            for (int i=0; i<nodeList.getLength(); i++) {
+                // Get element
+                Node element = nodeList.item(i);
+                System.out.println("NodeName : "+element.getNodeName());
+                System.out.println("Xpath : "+getParentsRecursively(element, null).getxPath());
+                System.out.println("Attributes : "+getAttributesAsMap(element.getAttributes()));
+                System.out.println("data :"+element.getTextContent());
+                System.out.println();
+                XmlNode xmlNode = XmlNode.builder()
+                        .nodeName(element.getNodeName())
+                        .nodeValue(element.getTextContent().trim())
+                        .attributesMap(getAttributesAsMap(element.getAttributes()))
+                        .xpath(getParentsRecursively(element,null).getxPath())
+                        .build();
+                if(getParentsRecursively(element,null).getxPath().contains("applications"))
+                    xmlNodeList.add(xmlNode);
+                /*System.out.println("NodeName : "+element.getNodeName());
+                System.out.println("Xpath : "+getParentsRecursively(element, null).getxPath());
+                System.out.println("Attributes : "+getAttributesAsMap(element.getAttributes()));
+                System.out.println();*/
+            }
+        }catch (Exception exception){
+            exception.fillInStackTrace();
+        }
+        return xmlNodeList;
+    }
+
+    public List<XmlNode> rawXmlParserForApplicationsLu(String filePath){
+        List<XmlNode> xmlNodeList = new ArrayList<>();
+        try{
+            NodeList nodeList = getNodeFromXml(filePath).getElementsByTagName("*");
+            for (int i=0; i<nodeList.getLength(); i++) {
+                // Get element
+                Node element = nodeList.item(i);
+//                System.out.println("NodeName : "+element.getNodeName());
+//                System.out.println("Xpath : "+getParentsRecursively(element, null).getxPath());
+//                System.out.println("Attributes : "+getAttributesAsMap(element.getAttributes()));
+//                System.out.println("data :"+element.getTextContent());
+//                System.out.println();
+                XmlNode xmlNode = XmlNode.builder()
+                        .nodeName(element.getNodeName())
+                        .nodeValue(element.getTextContent().trim())
+                        .attributesMap(getAttributesAsMap(element.getAttributes()))
+                        .xpath(getParentsRecursively(element,null).getxPath())
+                        .build();
+                if(getParentsRecursively(element,null).getxPath().contains("fr-application-reference"))
+                    xmlNodeList.add(xmlNode);
+                /*System.out.println("NodeName : "+element.getNodeName());
+                System.out.println("Xpath : "+getParentsRecursively(element, null).getxPath());
+                System.out.println("Attributes : "+getAttributesAsMap(element.getAttributes()));
+                System.out.println();*/
+            }
+        }catch (Exception exception){
+            exception.fillInStackTrace();
+        }
+        return xmlNodeList;
     }
 }
