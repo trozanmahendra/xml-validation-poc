@@ -33,7 +33,7 @@ public class xmlParserController {
 
     @GetMapping("/getAllRecords")
     public ResponseEntity<List<XmlMapping>> getData(){
-        return ResponseEntity.status(HttpStatus.OK).body(xmlParserService.getAll());
+        return ResponseEntity.status(HttpStatus.OK).body(xmlParserService.getAllByCountry(""));
     }
 
 

@@ -22,8 +22,8 @@ import java.util.*;
 public class XmlParserService {
     @Autowired
     private XmlMappingDao xmlMappingDao;
-    public List<XmlMapping> getAll(){
-        return xmlMappingDao.findAll();
+    public List<XmlMapping> getAllByCountry(String country){
+        return xmlMappingDao.getAllByCountry(country);
     }
 
     public RawNcxmlXpaths parseXmls(RequestFilePaths requestFilePaths){

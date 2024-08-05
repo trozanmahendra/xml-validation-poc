@@ -24,10 +24,11 @@ public class ApplicationsLuProcessorService {
     private  List<XmlMapping> xmlMappings;
 
     @PostConstruct
-    public void getApplicationsLuXmlMappings(){
+    public List<XmlMapping> getApplicationsLuXmlMappingsPerCountryAndPerPatent(){
         assert xmlParserService != null;
-        xmlMappings = xmlParserService.getAll().stream()
+        xmlMappings = xmlParserService.getAllByCountry("fr").stream()
                 .filter(xmlMapping -> "applications".equals(xmlMapping.getLogicalUnit())).toList();
+        return xmlMappings;
     }
 
     public List<XmlNode> cxmlParserForApplicationsLu(String filePath){
@@ -65,6 +66,7 @@ public class ApplicationsLuProcessorService {
         List<XmlNode> xmlNodeList = new ArrayList<>();
         try{
             NodeList nodeList = xmlParserService.getNodeFromXml(filePath).getElementsByTagName("*");
+            String rawLu = getApplicationsLuXmlMappingsPerCountryAndPerPatent().get(0).getRawLu();
             for (int i=0; i<nodeList.getLength(); i++) {
                 // Get element
                 Node element = nodeList.item(i);
@@ -79,7 +81,6 @@ public class ApplicationsLuProcessorService {
                         .attributesMap(getAttributesAsMap(element.getAttributes()))
                         .xpath(getParentsRecursively(element,null).getxPath())
                         .build();
-                String rawLu = xmlMappings.get(0).getRawLu();
                 if(getParentsRecursively(element,null).getxPath().contains(rawLu))
                     xmlNodeList.add(xmlNode);
                 /*System.out.println("NodeName : "+element.getNodeName());
@@ -101,16 +102,11 @@ public class ApplicationsLuProcessorService {
 
 
     public List<XmlMapping> setValuesToApplicationsLu(RequestFilePaths requestFilePaths){
-//        Applications Lu mappings from  db
-//        List<XmlMapping> xmlMappings = getApplicationsLuXmlMappings();
-//        xmlMappings.forEach(xmlMapping -> System.out.println(xmlMapping.getRawTag()));
-//        xmlMappings.forEach(xmlMapping -> System.out.println(xmlMapping.getCxmlTag()));
-//       applications Lu from raw and cxml files
         RawNCxmlNodes rawNCxmlNodes = parseXmlsForApplicationsLu(requestFilePaths);
         List<XmlNode> raw = rawNCxmlNodes.getRawXmlNodeList();
         List<XmlNode> cxml = rawNCxmlNodes.getCxmlNodeList();
 
-        return xmlMappings.stream().peek(xmlMapping -> {
+        return getApplicationsLuXmlMappingsPerCountryAndPerPatent().stream().peek(xmlMapping -> {
             for (XmlNode xmlNode : raw) {
 
                 if (xmlMapping.getRawTag().equals(xmlNode.getXpath())) {
