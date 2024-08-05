@@ -20,4 +20,5 @@ public class XmlMapping {
     private String rawTagValue;
     private String cxmlTagValue;
     private String logicalUnit;
+    private String rawLu;
 }
