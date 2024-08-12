@@ -4,7 +4,6 @@ import com.xml_validation_poc.dao.XmlMappingDao;
 import com.xml_validation_poc.dto.RawNcxmlXpaths;
 import com.xml_validation_poc.dto.RequestFilePaths;
 import com.xml_validation_poc.entity.XmlMapping;
-import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,8 +21,8 @@ import java.util.*;
 public class XmlParserService {
     @Autowired
     private XmlMappingDao xmlMappingDao;
-    public List<XmlMapping> getAllByCountry(String country){
-        return xmlMappingDao.getAllByCountry(country);
+    public List<XmlMapping> getAllByCountryAndKindCode(String country,String kindCode){
+        return xmlMappingDao.getAllByCountryAndKindCode(country,kindCode);
     }
 
     public RawNcxmlXpaths parseXmls(RequestFilePaths requestFilePaths){

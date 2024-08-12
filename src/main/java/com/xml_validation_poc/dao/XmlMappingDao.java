@@ -9,6 +9,6 @@ import java.util.List;
 @Repository
 public interface XmlMappingDao extends JpaRepository<XmlMapping,Integer> {
 
-    List<XmlMapping> getAllByCountry(String country);
+    List<XmlMapping> getAllByCountryAndKindCode(String country,String kindCode);
 
 }

@@ -16,18 +16,17 @@ import static com.xml_validation_poc.service.XmlParserService.getAttributesAsMap
 import static com.xml_validation_poc.service.XmlParserService.getParentsRecursively;
 
 @Service
-public class ApplicationsLuProcessorService {
-
+public class PublicationsLuParserService {
     @Autowired
-    private XmlParserService xmlParserService;
+    XmlParserService xmlParserService;
 
-    public List<XmlMapping> getApplicationsLuXmlMappingsPerCountryAndKindCode(String country,String kindCode){
+    public List<XmlMapping> getPublicationsLuXmlMappingsPerCountryAndKindCode(String country, String kindCode){
         assert xmlParserService != null;
         return xmlParserService.getAllByCountryAndKindCode(country,kindCode).stream()
-                .filter(xmlMapping -> "applications".equals(xmlMapping.getLogicalUnit())).toList();
+                .filter(xmlMapping -> "publications".equals(xmlMapping.getLogicalUnit())).toList();
     }
 
-    public List<XmlNode> cxmlParserForApplicationsLu(String filePath){
+    public List<XmlNode> cxmlParserForPublicationsLu(String filePath){
         List<XmlNode> xmlNodeList = new ArrayList<>();
         try{
             NodeList nodeList = xmlParserService.getNodeFromXml(filePath).getElementsByTagName("*");
@@ -45,7 +44,7 @@ public class ApplicationsLuProcessorService {
                         .attributesMap(getAttributesAsMap(element.getAttributes()))
                         .xpath(getParentsRecursively(element,null).getxPath())
                         .build();
-                if(getParentsRecursively(element,null).getxPath().contains("applications"))
+                if(getParentsRecursively(element,null).getxPath().contains("publications"))
                     xmlNodeList.add(xmlNode);
                 /*System.out.println("NodeName : "+element.getNodeName());
                 System.out.println("Xpath : "+getParentsRecursively(element, null).getxPath());
@@ -58,11 +57,11 @@ public class ApplicationsLuProcessorService {
         return xmlNodeList;
     }
 
-    public List<XmlNode> rawXmlParserForApplicationsLu(String filePath,String country,String kindCode){
+    public List<XmlNode> rawXmlParserForPublicationsLu (String filePath, String country, String kindCode){
         List<XmlNode> xmlNodeList = new ArrayList<>();
         try{
             NodeList nodeList = xmlParserService.getNodeFromXml(filePath).getElementsByTagName("*");
-            String rawLu = getApplicationsLuXmlMappingsPerCountryAndKindCode(country,kindCode).get(0).getRawLu();
+            String rawLu = getPublicationsLuXmlMappingsPerCountryAndKindCode(country,kindCode).get(0).getRawLu();
             for (int i=0; i<nodeList.getLength(); i++) {
                 // Get element
                 Node element = nodeList.item(i);
@@ -90,17 +89,17 @@ public class ApplicationsLuProcessorService {
         return xmlNodeList;
     }
 
-    public RawNCxmlNodes parseXmlsForApplicationsLu(RequestFilePaths requestFilePaths){
-        List<XmlNode> rawXmlNodeList = rawXmlParserForApplicationsLu(requestFilePaths.getRawFilePath(),requestFilePaths.getCountry(), requestFilePaths.getKindCode());
-        List<XmlNode> cxmlNodeList = cxmlParserForApplicationsLu(requestFilePaths.getCxmlFilePath());
+    public RawNCxmlNodes parseXmlsForPublicationsLu(RequestFilePaths requestFilePaths){
+        List<XmlNode> rawXmlNodeList = rawXmlParserForPublicationsLu(requestFilePaths.getRawFilePath(),requestFilePaths.getCountry(), requestFilePaths.getKindCode());
+        List<XmlNode> cxmlNodeList = cxmlParserForPublicationsLu(requestFilePaths.getCxmlFilePath());
         return new RawNCxmlNodes(rawXmlNodeList,cxmlNodeList);
     }
-    public List<XmlMapping> setValuesToApplicationsLu(RequestFilePaths requestFilePaths){
-        RawNCxmlNodes rawNCxmlNodes = parseXmlsForApplicationsLu(requestFilePaths);
+    public List<XmlMapping> setValuesToPublicationsLu(RequestFilePaths requestFilePaths){
+        RawNCxmlNodes rawNCxmlNodes = parseXmlsForPublicationsLu(requestFilePaths);
         List<XmlNode> raw = rawNCxmlNodes.getRawXmlNodeList();
         List<XmlNode> cxml = rawNCxmlNodes.getCxmlNodeList();
 
-        return getApplicationsLuXmlMappingsPerCountryAndKindCode(requestFilePaths.getCountry(), requestFilePaths.getKindCode()).stream().peek(xmlMapping -> {
+        return getPublicationsLuXmlMappingsPerCountryAndKindCode(requestFilePaths.getCountry(), requestFilePaths.getKindCode()).stream().peek(xmlMapping -> {
             for (XmlNode xmlNode : raw) {
 
                 if (xmlMapping.getRawTag().equals(xmlNode.getXpath())) {
