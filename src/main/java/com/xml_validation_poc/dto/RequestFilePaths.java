@@ -17,6 +17,7 @@ public class RequestFilePaths {
     private String cxmlFilePath;
     private String country;
     private String kindCode;
+    private String logicalUnit;
 
     /* fr
     {
@@ -35,5 +36,12 @@ public class RequestFilePaths {
             "kindCode":"A"
 
     }
+    {
+  "rawFilePath": "C:/Users/HP/Downloads/1020157033268_B1_raw.xml",
+  "cxmlFilePath": "C:/Users/HP/Downloads/1020157033268_B1_cXML_Output.xml",
+  "country": "kr",
+  "kindCode": "B1",
+  "logicalUnit": "applications"
+}
     */
 }

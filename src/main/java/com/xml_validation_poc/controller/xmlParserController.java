@@ -4,7 +4,8 @@ import com.xml_validation_poc.dto.RawNcxmlXpaths;
 import com.xml_validation_poc.dto.RequestFilePaths;
 import com.xml_validation_poc.entity.XmlMapping;
 import com.xml_validation_poc.service.ApplicationsLuProcessorService;
-import com.xml_validation_poc.service.PublicationsLuParserService;
+import com.xml_validation_poc.service.GenericLuProcessorService;
+import com.xml_validation_poc.service.PublicationsLuProcessorService;
 import com.xml_validation_poc.service.XmlParserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,7 +23,9 @@ public class xmlParserController {
     @Autowired
     private ApplicationsLuProcessorService applicationsLuProcessorService;
     @Autowired
-    private PublicationsLuParserService publicationsLuParserService;
+    private PublicationsLuProcessorService publicationsLuParserService;
+    @Autowired
+    private GenericLuProcessorService genericLuProcessorService;
 
     @PostMapping("/parse")
     public ResponseEntity<RawNcxmlXpaths> parseXml(@RequestBody RequestFilePaths requestFilePaths){
@@ -37,6 +40,11 @@ public class xmlParserController {
     @PostMapping("/parse/publications")
     public ResponseEntity<List<XmlMapping>> parseXmlForPublicationsLu(@RequestBody RequestFilePaths requestFilePaths){
         return ResponseEntity.status(HttpStatus.OK).body(publicationsLuParserService.setValuesToPublicationsLu(requestFilePaths));
+    }
+
+    @PostMapping("/parse/lu")
+    public ResponseEntity<List<XmlMapping>> parseXmlForAnyLu(@RequestBody RequestFilePaths requestFilePaths){
+        return ResponseEntity.status(HttpStatus.OK).body(genericLuProcessorService.setValuesToGenericLu(requestFilePaths));
     }
 
     @GetMapping("/getAllRecords")
