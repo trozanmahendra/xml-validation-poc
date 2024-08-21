@@ -104,15 +104,18 @@ public class GenericLuProcessorService {
             for (XmlNode xmlNode : raw) {
 
                 if (xmlMapping.getRawTag().equals(xmlNode.getXpath())) {
-                    System.out.println(xmlNode.getNodeValue());
-                    xmlMapping.setRawTagValue((xmlNode.getNodeValue().replace("\n","").replace(" ","")+" , "+xmlMapping.getRawTagValue()));
+                    xmlMapping.setRawTagValue((xmlNode.getNodeValue()
+                            .replace("\n","")
+                            .replace("  ","")
+                            +" , "+xmlMapping.getRawTagValue()));
                 }
             }
             for (XmlNode xmlNode : cxml) {
                 if (xmlMapping.getCxmlTag().equals(xmlNode.getXpath())) {
                     xmlMapping.setCxmlTagValue((xmlNode.getNodeValue()
                             .replace("\n","")
-                            .replace(" ","")+" , "+xmlMapping.getCxmlTagValue()));
+                            .replace("  "," ")
+                            +" , "+xmlMapping.getCxmlTagValue()));
                 }
             }
         }).toList();
